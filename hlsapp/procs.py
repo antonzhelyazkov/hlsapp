@@ -1,5 +1,5 @@
 from genericpath import isdir, isfile
-# from sys import stderr, stdout
+from functools import wraps
 from flask import Blueprint, request, render_template
 from flask_restful import abort
 from werkzeug.utils import secure_filename
@@ -8,10 +8,23 @@ import os
 import subprocess
 import requests
 
+
 procs = Blueprint('procs', __name__)
 
 
+def require_appkey(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if request.headers.get('x-api-key') and request.headers.get('x-api-key') == os.getenv('API_KEY'):
+            return view_function(*args, **kwargs)
+        else:
+            app.logger.info(f"ERROR in authentication {request.headers.get('x-api-key')}")
+            abort(401)
+    return decorated_function
+
+
 @procs.route('/upld', methods = ['POST'])
+@require_appkey
 def upload_file():
     app.logger.info(f"INFO start upload")
     upload_dir_base = os.getenv('UPLOAD_DIR')
@@ -26,9 +39,12 @@ def upload_file():
     # if request.method == 'POST':
     f = request.files['myfile']
     file_name = secure_filename(f.filename)
+    
     if not file_name.endswith('mp4'):
         return {'error': f'{file_name} must ends with mp4'}
-    save_dir = os.path.join(upload_dir_base, os.path.splitext(file_name)[0])
+
+    dir_name = os.path.splitext(file_name)[0]
+    save_dir = os.path.join(upload_dir_base, dir_name)
     
     try:
         os.makedirs(save_dir)
@@ -48,7 +64,7 @@ def upload_file():
         app.logger.info(f"INFO File saved {file_to_save}")
 
     ffmpeg_run(save_dir, file_name)
-    hls_url = f"{os.getenv('HLS_HOST')}/{os.path.splitext(file_name)[0]}/master.m3u8"
+    hls_url = f"{os.getenv('HLS_HOST')}/{dir_name}/master.m3u8"
 
     try:
         request_response = requests.head(hls_url)
