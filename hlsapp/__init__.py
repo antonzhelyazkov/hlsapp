@@ -4,8 +4,8 @@ import os
 import logging
 
 
-# scheduler = APScheduler()
 app = Flask(__name__)
+
 
 def create_app():
     load_dotenv()

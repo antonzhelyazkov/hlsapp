@@ -59,3 +59,40 @@ pip3 install -r requirements.txt
 
 </VirtualHost>
 ```
+
+## apache + HLS
+
+```
+<VirtualHost *:80>
+    ServerName hls.my.site
+
+    DocumentRoot /var/www/v1/
+
+    ErrorLog /var/log/httpd/v1-error.log
+    CustomLog /var/log/httpd/v1-access.log combined
+
+    Header set Access-Control-Allow-Origin "*"
+
+RewriteEngine on
+RewriteCond %{SERVER_NAME} =hls.my.site
+RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerName hls.my.site
+
+    DocumentRoot /var/www/v1/
+
+    ErrorLog /var/log/httpd/v1-error.log
+    CustomLog /var/log/httpd/v1-access.log combined
+
+    Header set Access-Control-Allow-Origin "*"
+
+SSLCertificateFile /etc/letsencrypt/live/hls.my.site/cert.pem
+SSLCertificateKeyFile /etc/letsencrypt/live/hls.my.site/privkey.pem
+Include /etc/letsencrypt/options-ssl-apache.conf
+SSLCertificateChainFile /etc/letsencrypt/live/hls.my.site/chain.pem
+</VirtualHost>
+</IfModule>
+```

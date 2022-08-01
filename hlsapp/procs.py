@@ -1,18 +1,15 @@
 from genericpath import isdir, isfile
-import subprocess
-from sys import stderr, stdout
+# from sys import stderr, stdout
 from flask import Blueprint, request, render_template
 from flask_restful import abort
 from werkzeug.utils import secure_filename
 from . import app
 import os
+import subprocess
+import requests
 
 procs = Blueprint('procs', __name__)
 
-
-@procs.route('/', methods = ['GET'])
-def hello():
-    return {'test': True}, 200
 
 @procs.route('/upld', methods = ['POST'])
 def upload_file():
@@ -26,32 +23,43 @@ def upload_file():
         except OSError as err_os:
             app.logger.info(err_os)
 
-    if request.method == 'POST':
-        f = request.files['myfile']
-        file_name = secure_filename(f.filename)
-        if not file_name.endswith('mp4'):
-            return {'error': f'{file_name} must ends with mp4'}
-        save_dir = os.path.join(upload_dir_base, os.path.splitext(file_name)[0])
-        
-        try:
-            os.makedirs(save_dir)
-        except OSError as err_os_name:
-            app.logger.info(err_os_name)
-            abort(404)
-        else:
-            app.logger.info(f"INFO Directory created {save_dir}")
+    # if request.method == 'POST':
+    f = request.files['myfile']
+    file_name = secure_filename(f.filename)
+    if not file_name.endswith('mp4'):
+        return {'error': f'{file_name} must ends with mp4'}
+    save_dir = os.path.join(upload_dir_base, os.path.splitext(file_name)[0])
+    
+    try:
+        os.makedirs(save_dir)
+    except OSError as err_os_name:
+        app.logger.info(err_os_name)
+        abort(404)
+    else:
+        app.logger.info(f"INFO Directory created {save_dir}")
 
-        try:
-            file_to_save = os.path.join(save_dir, file_name)
-            f.save(file_to_save)
-        except OSError as err_os_name:
-            app.logger.info(err_os_name)
-            abort(404)
-        else:
-            app.logger.info(f"INFO File saved {file_to_save}")
+    try:
+        file_to_save = os.path.join(save_dir, file_name)
+        f.save(file_to_save)
+    except OSError as err_os_name:
+        app.logger.info(err_os_name)
+        abort(404)
+    else:
+        app.logger.info(f"INFO File saved {file_to_save}")
 
-        ffmpeg_run(save_dir, file_name)
-        return 'file uploaded successfully'
+    ffmpeg_run(save_dir, file_name)
+    hls_url = f"{os.getenv('HLS_HOST')}/{os.path.splitext(file_name)[0]}/master.m3u8"
+
+    try:
+        request_response = requests.head(hls_url)
+    except requests.exceptions.ConnectionError as ce:
+        app.logger.info(f"ERROR {ce}")
+    
+    if request_response.status_code == 200:
+        return hls_url
+    else:
+        app.logger.info(f"ERROR status code of {hls_url} is {request_response.status_code}")
+        abort(request_response.status_code)
 
 
 def ffmpeg_run(directory, file):
@@ -112,7 +120,7 @@ def ffmpeg_run(directory, file):
         "-c:a:2", "aac", 
         "-b:a:2", "48k", 
         "-ac", "2",
-        "-t", "30",
+        # "-t", "30",
         "-f", "hls",
         "-hls_time", "2",
         "-hls_playlist_type", "vod",
@@ -127,13 +135,8 @@ def ffmpeg_run(directory, file):
 
     try:
         os.chdir(directory)
-        probe_output = subprocess.run(ffmpeg_cmd,
-                                      universal_newlines=True,
-                                      stderr=subprocess.PIPE,
-                                      stdout=subprocess.PIPE)
+        subprocess.run(ffmpeg_cmd, universal_newlines=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         
-        out_dict = {"status": True, "data": probe_output.stdout}
     except subprocess.CalledProcessError as es:
-        out_dict = {"status": False, "msg": es}
-    
-    return out_dict
+        app.logger.info(f"{es}")
+        abort(404)
