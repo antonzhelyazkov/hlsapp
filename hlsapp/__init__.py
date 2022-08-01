@@ -1,16 +1,11 @@
 from flask import Flask
 from dotenv import load_dotenv
-# from flask_apscheduler import APScheduler
-from flask_sqlalchemy import SQLAlchemy
 import os
 import logging
 
 
 # scheduler = APScheduler()
 app = Flask(__name__)
-db_mysql = SQLAlchemy()
-verbose = (os.getenv('DEBUG', 'False') == 'True')
-
 
 def create_app():
     load_dotenv()
