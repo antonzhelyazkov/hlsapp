@@ -2,7 +2,28 @@
 api mp4 to hls
 
 ## ffmpeg compile script. Works on Centos7/AlmaLinux8/RockyLimux8
-## ```-use_localtime_mkdir``` is used to place directory name in chunklist
+```-use_localtime_mkdir``` is used to place directory name in chunklist
+
+```
+#EXTM3U
+#EXT-X-VERSION:6
+#EXT-X-TARGETDURATION:4
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXT-X-INDEPENDENT-SEGMENTS
+#EXTINF:3.840000,
+stream_0/data00.ts
+#EXTINF:1.920000,
+stream_0/data01.ts
+#EXTINF:1.920000,
+stream_0/data02.ts
+#EXTINF:1.920000,
+stream_0/data03.ts
+#EXTINF:1.920000,
+stream_0/data04.ts
+#EXTINF:1.920000,
+stream_0/data05.ts
+```
 
 ```res/ffmpeg_compile.sh```
 
