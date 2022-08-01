@@ -68,14 +68,17 @@ def upload_file():
 
     try:
         request_response = requests.head(hls_url)
+        return_status = request_response.status_code
     except requests.exceptions.ConnectionError as ce:
         app.logger.info(f"ERROR {ce}")
+        abort(404)
     
-    if request_response.status_code == 200:
+    if return_status == 200:
+        app.logger.info(f"INFO Success {hls_url}")
         return hls_url
     else:
-        app.logger.info(f"ERROR status code of {hls_url} is {request_response.status_code}")
-        abort(request_response.status_code)
+        app.logger.info(f"ERROR status code of {hls_url} is {return_status}")
+        abort(return_status)
 
 
 def ffmpeg_run(directory, file):
@@ -136,7 +139,7 @@ def ffmpeg_run(directory, file):
         "-c:a:2", "aac", 
         "-b:a:2", "48k", 
         "-ac", "2",
-        # "-t", "30",
+        "-t", "10",
         "-f", "hls",
         "-hls_time", "2",
         "-hls_playlist_type", "vod",
