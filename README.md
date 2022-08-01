@@ -2,6 +2,7 @@
 api mp4 to hls
 
 ## ffmpeg compile script. Works on Centos7/AlmaLinux8/RockyLimux8
+## ```-use_localtime_mkdir``` is used to place directory name in chunklist
 
 ```res/ffmpeg_compile.sh```
 

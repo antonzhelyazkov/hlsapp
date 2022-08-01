@@ -118,8 +118,9 @@ def ffmpeg_run(directory, file):
         "-hls_playlist_type", "vod",
         "-hls_flags", "independent_segments",
         "-hls_segment_type", "mpegts",
-        "-hls_segment_filename", os.path.join(directory, "stream_%v/data%02d.ts"),
-        "-master_pl_name", os.path.join(directory, "master.m3u8"),
+        "-hls_segment_filename", "stream_%v/data%02d.ts",
+        "-master_pl_name", "master.m3u8",
+        "-use_localtime_mkdir", "1",
         "-var_stream_map", 'v:0,a:0 v:1,a:1 v:2,a:2',
         os.path.join(directory, "stream_%v.m3u8")
     ]
@@ -127,9 +128,9 @@ def ffmpeg_run(directory, file):
     print(ffmpeg_cmd)
     try:
         probe_output = subprocess.run(ffmpeg_cmd,
-                                      universal_newlines=True)
-                                    #   stderr=subprocess.PIPE,
-                                    #   stdout=subprocess.PIPE)
+                                      universal_newlines=True,
+                                      stderr=subprocess.PIPE,
+                                      stdout=subprocess.PIPE)
         
         out_dict = {"status": True, "data": probe_output.stdout}
     except subprocess.CalledProcessError as es:
