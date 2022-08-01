@@ -125,8 +125,8 @@ def ffmpeg_run(directory, file):
         os.path.join(directory, "stream_%v.m3u8")
     ]
 
-    print(ffmpeg_cmd)
     try:
+        os.chdir(directory)
         probe_output = subprocess.run(ffmpeg_cmd,
                                       universal_newlines=True,
                                       stderr=subprocess.PIPE,
