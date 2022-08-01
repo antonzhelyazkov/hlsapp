@@ -29,7 +29,7 @@ stream_0/data05.ts
 
 ## install wsgi
 
-```python3-mod_wsgi```
+```yum instal python3-mod_wsgi```
 
 ## install python venv
 
