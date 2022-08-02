@@ -38,7 +38,7 @@ def upload_file():
 
     # if request.method == 'POST':
     f = request.files['myfile']
-    file_name = secure_filename(f.filename)
+    file_name = secure_filename(f.filename).replace(' ', '_').lower()
     
     if not file_name.endswith('mp4'):
         return {'error': f'{file_name} must ends with mp4'}
@@ -139,7 +139,7 @@ def ffmpeg_run(directory, file):
         "-c:a:2", "aac", 
         "-b:a:2", "48k", 
         "-ac", "2",
-        "-t", "10",
+        # "-t", "10",
         "-f", "hls",
         "-hls_time", "2",
         "-hls_playlist_type", "vod",
