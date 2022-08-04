@@ -19,7 +19,7 @@ def require_appkey(view_function):
             return view_function(*args, **kwargs)
         else:
             app.logger.info(f"ERROR in authentication {request.headers.get('x-api-key')}")
-            abort(401)
+            abort(401, description="password")
     return decorated_function
 
 
@@ -41,7 +41,7 @@ def upload_file():
     file_name = secure_filename(f.filename).replace(' ', '_').lower()
     
     if not file_name.endswith('mp4'):
-        return {'error': f'{file_name} must ends with mp4'}
+        abort(404, description="file must ends with mp4")
 
     dir_name = os.path.splitext(file_name)[0]
     save_dir = os.path.join(upload_dir_base, dir_name)
@@ -50,7 +50,7 @@ def upload_file():
         os.makedirs(save_dir)
     except OSError as err_os_name:
         app.logger.info(err_os_name)
-        abort(404)
+        abort(500)
     else:
         app.logger.info(f"INFO Directory created {save_dir}")
 
@@ -59,7 +59,7 @@ def upload_file():
         f.save(file_to_save)
     except OSError as err_os_name:
         app.logger.info(err_os_name)
-        abort(404)
+        abort(500)
     else:
         app.logger.info(f"INFO File saved {file_to_save}")
 
@@ -71,14 +71,14 @@ def upload_file():
         return_status = request_response.status_code
     except requests.exceptions.ConnectionError as ce:
         app.logger.info(f"ERROR {ce}")
-        abort(404)
+        abort(404, description="could not connect to m3u8")
     
     if return_status == 200:
         app.logger.info(f"INFO Success {hls_url}")
         return hls_url
     else:
         app.logger.info(f"ERROR status code of {hls_url} is {return_status}")
-        abort(return_status)
+        abort(404, description=f"m3u8 response is {return_status}")
 
 
 def ffmpeg_run(directory, file):
@@ -93,26 +93,26 @@ def ffmpeg_run(directory, file):
         ffmpeg_bin, '-i', os.path.join(directory, file),
         "-hide_banner", "-loglevel", "quiet",
         '-filter_complex',
-        '[0:v]split=3[v1][v2][v3];[v1]copy[v1out];[v2]scale=w=1280:h=720[v2out];[v3]scale=w=640:h=360[v3out]',
+        '[0:v]yadif,split=3[v1][v2][v3];[v1]copy[v1out];[v2]scale=w=1280:h=720[v2out];[v3]scale=w=640:h=360[v3out]',
         "-map", "[v1out]", 
         "-c:v:0", "libx264", 
         "-x264-params", "nal-hrd=cbr:force-cfr=1", 
-        "-b:v:0", "5M", 
-        "-maxrate:v:0", "5M", 
-        "-minrate:v:0", "5M", 
-        "-bufsize:v:0", "10M", 
-        "-preset", "slow", 
+        "-b:v:0", "4M", 
+        "-maxrate:v:0", "4M", 
+        "-minrate:v:0", "4M", 
+        "-bufsize:v:0", "8M", 
+        "-preset", "veryfast", 
         "-g", "48",
         "-sc_threshold", "0",
         "-keyint_min", "48",
         "-map", "[v2out]", 
         "-c:v:1", "libx264", 
         "-x264-params", "nal-hrd=cbr:force-cfr=1", 
-        "-b:v:1", "3M", 
-        "-maxrate:v:1", "3M", 
-        "-minrate:v:1", "3M", 
-        "-bufsize:v:1", "3M", 
-        "-preset", "slow", 
+        "-b:v:1", "2M", 
+        "-maxrate:v:1", "2M", 
+        "-minrate:v:1", "2M", 
+        "-bufsize:v:1", "2M", 
+        "-preset", "veryfast", 
         "-g", "48", 
         "-sc_threshold", "0", 
         "-keyint_min", "48",
@@ -123,7 +123,7 @@ def ffmpeg_run(directory, file):
         "-maxrate:v:2", "1M", 
         "-minrate:v:2", "1M", 
         "-bufsize:v:2", "1M", 
-        "-preset", "slow", 
+        "-preset", "veryfast", 
         "-g", "48", 
         "-sc_threshold", "0", 
         "-keyint_min", "48",
