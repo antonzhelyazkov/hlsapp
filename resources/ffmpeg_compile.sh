@@ -4,7 +4,7 @@ rpms=("epel-release" "autoconf" "automake" "bzip2" "bzip2-devel" "cmake" "freety
 base_dir='/usr/local/ffmpeg'
 src_dir="$base_dir/ffmpeg_sources"
 THREADS=$(nproc --all)
-FFMPEG_VERSION='4.4.2'
+FFMPEG_VERSION='5.1.3'
 
 if [ "$EUID" -ne 0 ]
 then
